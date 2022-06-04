@@ -3,19 +3,15 @@ import { makeStyles } from "@material-ui/core/styles";
 import {
   Container,
   Typography,
-  Button,
-  Icon,
   Paper,
   Box,
-  TextField,
   Checkbox,
+  FormControl,
+  FormControlLabel,
 } from "@material-ui/core";
-import DateFnsUtils from "@date-io/date-fns";
-import {
-  MuiPickersUtilsProvider,
-  KeyboardDatePicker,
-} from "@material-ui/pickers";
 import format from "date-fns/format";
+import TodoItem from "./TodoItem";
+import TodoFactory from "./TodoFactory";
 
 const useStyles = makeStyles({
   addTodoContainer: { padding: 10 },
@@ -43,22 +39,34 @@ const useStyles = makeStyles({
     marginLeft: 5,
     padding: 5,
   },
+  formControl: {
+    margin: 10,
+    minWidth: 120,
+  },
 });
 
 function Todos() {
+  const baseURL = "http://localhost:3001/";
   const classes = useStyles();
+  let timer = null;
   const [todos, setTodos] = useState([]);
-  const [newTodoText, setNewTodoText] = useState("");
-  const [newTodoDueDate, setNewTodoDueDate] = useState(null);
+  const [showTasksDueToday, setShowTasksDueToday] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:3001/")
+    const queryParamsObj = {};
+
+    if (showTasksDueToday) {
+      queryParamsObj.dueDate = format(new Date(), "yyyy-MM-dd");
+    }
+    const queryParams = new URLSearchParams(queryParamsObj).toString();
+
+    fetch(`${baseURL}?${queryParams}`)
       .then((response) => response.json())
       .then((todos) => setTodos(todos));
-  }, [setTodos]);
+  }, [setTodos, showTasksDueToday]);
 
   function addTodo(text, dueDate) {
-    fetch("http://localhost:3001/", {
+    fetch(baseURL, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -71,12 +79,10 @@ function Todos() {
     })
       .then((response) => response.json())
       .then((todo) => setTodos([...todos, todo]));
-    setNewTodoText("");
-    setNewTodoDueDate(null);
   }
 
   function toggleTodoCompleted(id) {
-    fetch(`http://localhost:3001/${id}`, {
+    fetch(`${baseURL}${id}`, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -107,85 +113,36 @@ function Todos() {
       <Typography variant="h3" component="h1" gutterBottom>
         Todos
       </Typography>
-      <Paper className={classes.addTodoContainer}>
-        <Box display="flex" flexDirection="row">
-          <Box flexGrow={1}>
-            <TextField
-              fullWidth
-              label="Task"
-              placeholder="Eg: go to shopping..."
-              value={newTodoText}
-              onKeyPress={(event) => {
-                if (event.key === "Enter") {
-                  addTodo(newTodoText, newTodoDueDate);
-                }
-              }}
-              onChange={(event) => setNewTodoText(event.target.value)}
-            />
-          </Box>
-          <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <KeyboardDatePicker
-              className={classes.addTodoDatePicker}
-              disableToolbar
-              disablePast
-              variant="inline"
-              format="dd MMM yyyy"
-              margin="none"
-              id="date-picker-inline"
-              label="Due date"
-              value={newTodoDueDate}
-              onChange={(date) => setNewTodoDueDate(format(date, "yyyy-MM-dd"))}
-              KeyboardButtonProps={{
-                "aria-label": "set due date",
+      <TodoFactory onAddTodo={({ text, dueDate }) => addTodo(text, dueDate)} />
+      <FormControl className={classes.formControl}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              color="primary"
+              checked={showTasksDueToday}
+              onChange={(event) => {
+                setShowTasksDueToday(event.target.checked);
               }}
             />
-          </MuiPickersUtilsProvider>
-          <Button
-            className={classes.addTodoButton}
-            startIcon={<Icon>add</Icon>}
-            onClick={() => addTodo(newTodoText, newTodoDueDate)}
-          >
-            Add
-          </Button>
-        </Box>
-      </Paper>
+          }
+          label="Tasks due today"
+          labelPlacement="end"
+        />
+      </FormControl>
+
+      {/* TODO LIST */}
       {todos.length > 0 && (
         <Paper className={classes.todosContainer}>
           <Box display="flex" flexDirection="column" alignItems="stretch">
             {todos.map(({ id, text, completed, dueDate }) => (
-              <Box
+              <TodoItem
                 key={id}
-                display="flex"
-                flexDirection="row"
-                alignItems="center"
-                className={classes.todoContainer}
-              >
-                <Checkbox
-                  checked={completed}
-                  onChange={() => toggleTodoCompleted(id)}
-                ></Checkbox>
-                <Box flexGrow={1}>
-                  <Typography
-                    className={completed ? classes.todoTextCompleted : ""}
-                    variant="body1"
-                  >
-                    {text}
-                  </Typography>
-                  {dueDate && (
-                    <Typography variant="body2">
-                      Due to {format(new Date(dueDate), "dd MMM yyyy")}
-                    </Typography>
-                  )}
-                </Box>
-
-                <Button
-                  className={classes.deleteTodo}
-                  startIcon={<Icon>delete</Icon>}
-                  onClick={() => deleteTodo(id)}
-                >
-                  Delete
-                </Button>
-              </Box>
+                text={text}
+                completed={completed}
+                dueDate={dueDate}
+                onDelete={() => deleteTodo(id)}
+                onToggleCompleted={() => toggleTodoCompleted(id)}
+              />
             ))}
           </Box>
         </Paper>
