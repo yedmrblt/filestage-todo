@@ -26,9 +26,15 @@ app.use(require("cors")());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get("/", async (_req, res) => {
+app.get("/", async (req, res) => {
+  const { dueDate } = req.query;
+  const filter = {};
+  if (dueDate) {
+    filter.dueDate = new Date(dueDate);
+  }
+
   const todos = database.client.db("todos").collection("todos");
-  const response = await todos.find({}).toArray();
+  const response = await todos.find(filter).toArray();
   res.status(200);
   res.json(response);
 });
