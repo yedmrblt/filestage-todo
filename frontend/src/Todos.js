@@ -10,10 +10,17 @@ import {
   TextField,
   Checkbox,
 } from "@material-ui/core";
+import DateFnsUtils from "@date-io/date-fns";
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker,
+} from "@material-ui/pickers";
+import format from "date-fns/format";
 
 const useStyles = makeStyles({
   addTodoContainer: { padding: 10 },
   addTodoButton: { marginLeft: 5 },
+  addTodoDatePicker: { marginLeft: 10 },
   todosContainer: { marginTop: 10, padding: 10 },
   todoContainer: {
     borderTop: "1px solid #bfbfbf",
@@ -40,6 +47,7 @@ function Todos() {
   const classes = useStyles();
   const [todos, setTodos] = useState([]);
   const [newTodoText, setNewTodoText] = useState("");
+  const [newTodoDueDate, setNewTodoDueDate] = useState(null);
 
   useEffect(() => {
     fetch("http://localhost:3001/")
@@ -47,18 +55,22 @@ function Todos() {
       .then((todos) => setTodos(todos));
   }, [setTodos]);
 
-  function addTodo(text) {
+  function addTodo(text, dueDate) {
     fetch("http://localhost:3001/", {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
       method: "POST",
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({
+        text,
+        ...(dueDate && { dueDate }),
+      }),
     })
       .then((response) => response.json())
       .then((todo) => setTodos([...todos, todo]));
     setNewTodoText("");
+    setNewTodoDueDate(null);
   }
 
   function toggleTodoCompleted(id) {
@@ -98,19 +110,38 @@ function Todos() {
           <Box flexGrow={1}>
             <TextField
               fullWidth
+              label="Task"
+              placeholder="Eg: go to shopping..."
               value={newTodoText}
               onKeyPress={(event) => {
                 if (event.key === "Enter") {
-                  addTodo(newTodoText);
+                  addTodo(newTodoText, newTodoDueDate);
                 }
               }}
               onChange={(event) => setNewTodoText(event.target.value)}
             />
           </Box>
+          <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <KeyboardDatePicker
+              className={classes.addTodoDatePicker}
+              disableToolbar
+              disablePast
+              variant="inline"
+              format="dd MMM yyyy"
+              margin="none"
+              id="date-picker-inline"
+              label="Due date"
+              value={newTodoDueDate}
+              onChange={(date) => setNewTodoDueDate(format(date, "yyyy-MM-dd"))}
+              KeyboardButtonProps={{
+                "aria-label": "set due date",
+              }}
+            />
+          </MuiPickersUtilsProvider>
           <Button
             className={classes.addTodoButton}
             startIcon={<Icon>add</Icon>}
-            onClick={() => addTodo(newTodoText)}
+            onClick={() => addTodo(newTodoText, newTodoDueDate)}
           >
             Add
           </Button>
