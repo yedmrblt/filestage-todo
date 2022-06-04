@@ -40,6 +40,8 @@ const useStyles = makeStyles({
   },
   deleteTodo: {
     visibility: "hidden",
+    marginLeft: 5,
+    padding: 5,
   },
 });
 
@@ -150,7 +152,7 @@ function Todos() {
       {todos.length > 0 && (
         <Paper className={classes.todosContainer}>
           <Box display="flex" flexDirection="column" alignItems="stretch">
-            {todos.map(({ id, text, completed }) => (
+            {todos.map(({ id, text, completed, dueDate }) => (
               <Box
                 key={id}
                 display="flex"
@@ -169,7 +171,13 @@ function Todos() {
                   >
                     {text}
                   </Typography>
+                  {dueDate && (
+                    <Typography variant="body2">
+                      Due to {format(new Date(dueDate), "dd MMM yyyy")}
+                    </Typography>
+                  )}
                 </Box>
+
                 <Button
                   className={classes.deleteTodo}
                   startIcon={<Icon>delete</Icon>}
