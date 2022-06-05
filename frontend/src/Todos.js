@@ -14,31 +14,8 @@ import TodoItem from "./TodoItem";
 import TodoFactory from "./TodoFactory";
 
 const useStyles = makeStyles({
-  addTodoContainer: { padding: 10 },
-  addTodoButton: { marginLeft: 5 },
-  addTodoDatePicker: { marginLeft: 10 },
   todosContainer: { marginTop: 10, padding: 10 },
-  todoContainer: {
-    borderTop: "1px solid #bfbfbf",
-    marginTop: 5,
-    "&:first-child": {
-      margin: 0,
-      borderTop: "none",
-    },
-    "&:hover": {
-      "& $deleteTodo": {
-        visibility: "visible",
-      },
-    },
-  },
-  todoTextCompleted: {
-    textDecoration: "line-through",
-  },
-  deleteTodo: {
-    visibility: "hidden",
-    marginLeft: 5,
-    padding: 5,
-  },
+  filterContainer: { marginTop: 10, marginLeft: 5 },
 });
 
 function Todos() {
@@ -130,7 +107,12 @@ function Todos() {
         Todos
       </Typography>
       <TodoFactory onAddTodo={({ text, dueDate }) => addTodo(text, dueDate)} />
-      <Box display="flex" flexDirection="row" marginY="15px" marginX="5px">
+      <Box
+        className={classes.filterContainer}
+        display="flex"
+        flexDirection="row"
+        gutterBottom
+      >
         <FormControl>
           <FormControlLabel
             control={
