@@ -3,66 +3,58 @@ import { makeStyles } from "@material-ui/core/styles";
 import {
   Container,
   Typography,
-  Button,
-  Icon,
   Paper,
   Box,
-  TextField,
   Checkbox,
+  FormControl,
+  FormControlLabel,
 } from "@material-ui/core";
+import format from "date-fns/format";
+import TodoItem from "./TodoItem";
+import TodoFactory from "./TodoFactory";
 
 const useStyles = makeStyles({
-  addTodoContainer: { padding: 10 },
-  addTodoButton: { marginLeft: 5 },
   todosContainer: { marginTop: 10, padding: 10 },
-  todoContainer: {
-    borderTop: "1px solid #bfbfbf",
-    marginTop: 5,
-    "&:first-child": {
-      margin: 0,
-      borderTop: "none",
-    },
-    "&:hover": {
-      "& $deleteTodo": {
-        visibility: "visible",
-      },
-    },
-  },
-  todoTextCompleted: {
-    textDecoration: "line-through",
-  },
-  deleteTodo: {
-    visibility: "hidden",
-  },
+  filterContainer: { marginTop: 10, marginLeft: 5 },
 });
 
 function Todos() {
+  const baseURL = "http://localhost:3001/";
   const classes = useStyles();
   const [todos, setTodos] = useState([]);
-  const [newTodoText, setNewTodoText] = useState("");
+  const [showTasksDueToday, setShowTasksDueToday] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:3001/")
+    const queryParamsObj = {};
+
+    if (showTasksDueToday) {
+      queryParamsObj.dueDate = format(new Date(), "yyyy-MM-dd");
+    }
+    const queryParams = new URLSearchParams(queryParamsObj).toString();
+
+    fetch(`${baseURL}?${queryParams}`)
       .then((response) => response.json())
       .then((todos) => setTodos(todos));
-  }, [setTodos]);
+  }, [setTodos, showTasksDueToday]);
 
-  function addTodo(text) {
-    fetch("http://localhost:3001/", {
+  function addTodo(text, dueDate) {
+    fetch(baseURL, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
       method: "POST",
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({
+        text,
+        ...(dueDate && { dueDate }),
+      }),
     })
       .then((response) => response.json())
       .then((todo) => setTodos([...todos, todo]));
-    setNewTodoText("");
   }
 
   function toggleTodoCompleted(id) {
-    fetch(`http://localhost:3001/${id}`, {
+    fetch(`${baseURL}${id}`, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -82,6 +74,27 @@ function Todos() {
     });
   }
 
+  function setTodoDueDate(id, dueDate) {
+    fetch(`${baseURL}${id}/due-date`, {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      method: "PUT",
+      body: JSON.stringify({
+        dueDate,
+      }),
+    }).then(() => {
+      const newTodos = [...todos];
+      const modifiedTodoIndex = newTodos.findIndex((todo) => todo.id === id);
+      newTodos[modifiedTodoIndex] = {
+        ...newTodos[modifiedTodoIndex],
+        dueDate,
+      };
+      setTodos(newTodos);
+    });
+  }
+
   function deleteTodo(id) {
     fetch(`http://localhost:3001/${id}`, {
       method: "DELETE",
@@ -93,60 +106,44 @@ function Todos() {
       <Typography variant="h3" component="h1" gutterBottom>
         Todos
       </Typography>
-      <Paper className={classes.addTodoContainer}>
-        <Box display="flex" flexDirection="row">
-          <Box flexGrow={1}>
-            <TextField
-              fullWidth
-              value={newTodoText}
-              onKeyPress={(event) => {
-                if (event.key === "Enter") {
-                  addTodo(newTodoText);
-                }
-              }}
-              onChange={(event) => setNewTodoText(event.target.value)}
-            />
-          </Box>
-          <Button
-            className={classes.addTodoButton}
-            startIcon={<Icon>add</Icon>}
-            onClick={() => addTodo(newTodoText)}
-          >
-            Add
-          </Button>
-        </Box>
-      </Paper>
+      <TodoFactory onAddTodo={({ text, dueDate }) => addTodo(text, dueDate)} />
+      <Box
+        className={classes.filterContainer}
+        display="flex"
+        flexDirection="row"
+        gutterBottom
+      >
+        <FormControl>
+          <FormControlLabel
+            control={
+              <Checkbox
+                color="primary"
+                checked={showTasksDueToday}
+                onChange={(event) => {
+                  setShowTasksDueToday(event.target.checked);
+                }}
+              />
+            }
+            label="Tasks due today"
+            labelPlacement="end"
+          />
+        </FormControl>
+      </Box>
+
+      {/* TODO LIST */}
       {todos.length > 0 && (
         <Paper className={classes.todosContainer}>
           <Box display="flex" flexDirection="column" alignItems="stretch">
-            {todos.map(({ id, text, completed }) => (
-              <Box
+            {todos.map(({ id, text, completed, dueDate }) => (
+              <TodoItem
                 key={id}
-                display="flex"
-                flexDirection="row"
-                alignItems="center"
-                className={classes.todoContainer}
-              >
-                <Checkbox
-                  checked={completed}
-                  onChange={() => toggleTodoCompleted(id)}
-                ></Checkbox>
-                <Box flexGrow={1}>
-                  <Typography
-                    className={completed ? classes.todoTextCompleted : ""}
-                    variant="body1"
-                  >
-                    {text}
-                  </Typography>
-                </Box>
-                <Button
-                  className={classes.deleteTodo}
-                  startIcon={<Icon>delete</Icon>}
-                  onClick={() => deleteTodo(id)}
-                >
-                  Delete
-                </Button>
-              </Box>
+                text={text}
+                completed={completed}
+                dueDate={dueDate}
+                onDelete={() => deleteTodo(id)}
+                onToggleCompleted={() => toggleTodoCompleted(id)}
+                onSetDueDate={(date) => setTodoDueDate(id, date)}
+              />
             ))}
           </Box>
         </Paper>
