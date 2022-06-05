@@ -39,10 +39,6 @@ const useStyles = makeStyles({
     marginLeft: 5,
     padding: 5,
   },
-  formControl: {
-    margin: 10,
-    minWidth: 120,
-  },
 });
 
 function Todos() {
@@ -134,21 +130,23 @@ function Todos() {
         Todos
       </Typography>
       <TodoFactory onAddTodo={({ text, dueDate }) => addTodo(text, dueDate)} />
-      <FormControl className={classes.formControl}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              color="primary"
-              checked={showTasksDueToday}
-              onChange={(event) => {
-                setShowTasksDueToday(event.target.checked);
-              }}
-            />
-          }
-          label="Tasks due today"
-          labelPlacement="end"
-        />
-      </FormControl>
+      <Box display="flex" flexDirection="row" marginY="15px" marginX="5px">
+        <FormControl>
+          <FormControlLabel
+            control={
+              <Checkbox
+                color="primary"
+                checked={showTasksDueToday}
+                onChange={(event) => {
+                  setShowTasksDueToday(event.target.checked);
+                }}
+              />
+            }
+            label="Tasks due today"
+            labelPlacement="end"
+          />
+        </FormControl>
+      </Box>
 
       {/* TODO LIST */}
       {todos.length > 0 && (

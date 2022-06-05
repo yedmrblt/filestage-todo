@@ -71,7 +71,9 @@ function TodoItem({
           {text}
         </Typography>
         {dueDate && (
-          <Typography variant="body2">Due {humanizedDueDate()}</Typography>
+          <Typography variant="body2" color="textSecondary">
+            Due {humanizedDueDate()}
+          </Typography>
         )}
       </Box>
       {!completed && (
