@@ -81,6 +81,24 @@ app.put("/:id", async (req, res) => {
   res.end();
 });
 
+app.put("/:id/due-date", async (req, res) => {
+  const { id } = req.params;
+  const { dueDate } = req.body;
+
+  if (typeof dueDate !== "string") {
+    res.status(400);
+    res.json({ message: "invalid 'dueDate' expected string" });
+    return;
+  }
+
+  await database.client
+    .db("todos")
+    .collection("todos")
+    .updateOne({ id }, { $set: { dueDate: new Date(dueDate) } });
+  res.status(200);
+  res.end();
+});
+
 app.delete("/:id", async (req, res) => {
   const { id } = req.params;
   await database.client.db("todos").collection("todos").deleteOne({ id });
