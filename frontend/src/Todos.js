@@ -48,7 +48,6 @@ const useStyles = makeStyles({
 function Todos() {
   const baseURL = "http://localhost:3001/";
   const classes = useStyles();
-  let timer = null;
   const [todos, setTodos] = useState([]);
   const [showTasksDueToday, setShowTasksDueToday] = useState(false);
 
@@ -102,6 +101,27 @@ function Todos() {
     });
   }
 
+  function setTodoDueDate(id, dueDate) {
+    fetch(`${baseURL}${id}/due-date`, {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      method: "PUT",
+      body: JSON.stringify({
+        dueDate,
+      }),
+    }).then(() => {
+      const newTodos = [...todos];
+      const modifiedTodoIndex = newTodos.findIndex((todo) => todo.id === id);
+      newTodos[modifiedTodoIndex] = {
+        ...newTodos[modifiedTodoIndex],
+        dueDate,
+      };
+      setTodos(newTodos);
+    });
+  }
+
   function deleteTodo(id) {
     fetch(`http://localhost:3001/${id}`, {
       method: "DELETE",
@@ -142,6 +162,7 @@ function Todos() {
                 dueDate={dueDate}
                 onDelete={() => deleteTodo(id)}
                 onToggleCompleted={() => toggleTodoCompleted(id)}
+                onSetDueDate={(date) => setTodoDueDate(id, date)}
               />
             ))}
           </Box>
