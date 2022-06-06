@@ -23,7 +23,7 @@ function TodoFactory({ onAddTodo }) {
   function addTodo() {
     onAddTodo({
       text,
-      ...(dueDate && { dueDate }),
+      ...(dueDate && { dueDate: format(dueDate, "yyyy-MM-dd") }),
     });
     setText("");
     setDueDate(null);
@@ -51,13 +51,13 @@ function TodoFactory({ onAddTodo }) {
             className={classes.addTodoDatePicker}
             disableToolbar
             disablePast
-            variant="inline"
-            format="dd MMM yyyy"
+            variant="dialog"
+            format="dd/MM/yyyy"
             margin="none"
             id="date-picker-inline"
             label="Due date"
             value={dueDate}
-            onChange={(date) => setDueDate(format(date, "yyyy-MM-dd"))}
+            onChange={(date) => setDueDate(date)}
             KeyboardButtonProps={{
               "aria-label": "set due date",
             }}
