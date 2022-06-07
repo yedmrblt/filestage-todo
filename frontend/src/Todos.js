@@ -10,6 +10,7 @@ import {
   FormControlLabel,
 } from "@material-ui/core";
 import format from "date-fns/format";
+import InfiniteScroll from "react-infinite-scroll-component";
 import TodoItem from "./TodoItem";
 import TodoFactory from "./TodoFactory";
 
@@ -21,21 +22,31 @@ const useStyles = makeStyles({
 function Todos() {
   const baseURL = "http://localhost:3001/";
   const classes = useStyles();
+
   const [todos, setTodos] = useState([]);
+  const [page, setPage] = useState(1);
+  const [countTotal, setCountTotal] = useState(0);
   const [showTasksDueToday, setShowTasksDueToday] = useState(false);
 
   useEffect(() => {
-    const queryParamsObj = {};
+    fetchTodos();
+  }, [showTasksDueToday]);
+
+  function fetchTodos() {
+    const queryParamsObj = { page };
 
     if (showTasksDueToday) {
       queryParamsObj.dueDate = format(new Date(), "yyyy-MM-dd");
     }
     const queryParams = new URLSearchParams(queryParamsObj).toString();
-
     fetch(`${baseURL}?${queryParams}`)
       .then((response) => response.json())
-      .then((todos) => setTodos(todos));
-  }, [setTodos, showTasksDueToday]);
+      .then(({ countTotal, items }) => {
+        setTodos([...todos, ...items]);
+        setCountTotal(countTotal);
+        setPage(page + 1);
+      });
+  }
 
   function addTodo(text, dueDate) {
     fetch(baseURL, {
@@ -111,7 +122,6 @@ function Todos() {
         className={classes.filterContainer}
         display="flex"
         flexDirection="row"
-        gutterBottom
       >
         <FormControl>
           <FormControlLabel
@@ -120,6 +130,8 @@ function Todos() {
                 color="primary"
                 checked={showTasksDueToday}
                 onChange={(event) => {
+                  setPage(1);
+                  setTodos([]);
                   setShowTasksDueToday(event.target.checked);
                 }}
               />
@@ -131,9 +143,34 @@ function Todos() {
       </Box>
 
       {/* TODO LIST */}
-      {todos.length > 0 && (
-        <Paper className={classes.todosContainer}>
-          <Box display="flex" flexDirection="column" alignItems="stretch">
+      <Paper className={classes.todosContainer}>
+        <Box display="flex" flexDirection="column" alignItems="stretch">
+          <InfiniteScroll
+            dataLength={todos.length}
+            next={fetchTodos}
+            hasMore={todos.length < countTotal}
+            height={500}
+            endMessage={
+              <Typography
+                align="center"
+                variant="subtitle2"
+                color="textSecondary"
+                gutterBottom
+              >
+                Yay! You have seen it all
+              </Typography>
+            }
+            loader={
+              <Typography
+                align="center"
+                variant="subtitle2"
+                color="textSecondary"
+                gutterBottom
+              >
+                Loading...
+              </Typography>
+            }
+          >
             {todos.map(({ id, text, completed, dueDate }) => (
               <TodoItem
                 key={id}
@@ -145,9 +182,9 @@ function Todos() {
                 onSetDueDate={(date) => setTodoDueDate(id, date)}
               />
             ))}
-          </Box>
-        </Paper>
-      )}
+          </InfiniteScroll>
+        </Box>
+      </Paper>
     </Container>
   );
 }
