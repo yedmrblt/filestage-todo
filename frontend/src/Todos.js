@@ -10,7 +10,7 @@ import {
   FormControlLabel,
   Snackbar,
 } from "@material-ui/core";
-import format from "date-fns/format";
+import { format, isToday } from "date-fns";
 import InfiniteScroll from "react-infinite-scroll-component";
 import TodoItem from "./TodoItem";
 import TodoFactory from "./TodoFactory";
@@ -87,6 +87,9 @@ function Todos() {
         return response.json();
       })
       .then((todo) => {
+        if (showTasksDueToday && !isToday(new Date(todo.dueDate))) {
+          return;
+        }
         const newTodos = [...todos];
         newTodos.unshift(todo);
         setTodos(newTodos);
