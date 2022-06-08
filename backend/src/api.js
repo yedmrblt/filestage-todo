@@ -38,6 +38,7 @@ app.get("/", async (req, res) => {
   const todos = database.client.db("todos").collection("todos");
   const response = await todos
     .find(filter)
+    .sort({ _id: -1 })
     .skip(pageNumber > 0 ? (pageNumber - 1) * nPerPage : 0)
     .limit(nPerPage)
     .toArray();
