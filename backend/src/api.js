@@ -27,16 +27,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.get("/", async (req, res) => {
-  const { dueDate } = req.query;
+  const { dueDate, page } = req.query;
+  const nPerPage = 10;
+  const pageNumber = page || 0;
   const filter = {};
   if (dueDate) {
     filter.dueDate = new Date(dueDate);
   }
 
   const todos = database.client.db("todos").collection("todos");
-  const response = await todos.find(filter).toArray();
+  const response = await todos
+    .find(filter)
+    .sort({ _id: -1 })
+    .skip(pageNumber > 0 ? (pageNumber - 1) * nPerPage : 0)
+    .limit(nPerPage)
+    .toArray();
+  const countTotal = await todos.count(filter);
   res.status(200);
-  res.json(response);
+  res.json({ countTotal, items: response });
 });
 
 app.post("/", async (req, res) => {
