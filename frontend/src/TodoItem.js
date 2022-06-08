@@ -42,7 +42,11 @@ function TodoItem({
   const classes = useStyles();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  const humanizedDueDate = () => {
+  /**
+   * Humanize todo item's due date
+   * @returns today | tomorrow | dd MMM, yyyy
+   */
+  function humanizedDueDate() {
     const date = new Date(dueDate);
     if (isToday(date)) {
       return "today";
@@ -53,7 +57,7 @@ function TodoItem({
     }
 
     return format(date, "dd MMM, yyyy");
-  };
+  }
 
   return (
     <Box

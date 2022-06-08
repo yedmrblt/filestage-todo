@@ -28,23 +28,27 @@ app.use(express.urlencoded({ extended: false }));
 
 app.get("/", async (req, res) => {
   const { dueDate, page } = req.query;
-  const nPerPage = 10;
+  const nPerPage = 20;
   const pageNumber = page || 0;
   const filter = {};
+
   if (dueDate) {
     filter.dueDate = new Date(dueDate);
   }
 
   const todos = database.client.db("todos").collection("todos");
-  const response = await todos
+  // Fetch items
+  const items = await todos
     .find(filter)
     .sort({ _id: -1 })
     .skip(pageNumber > 0 ? (pageNumber - 1) * nPerPage : 0)
     .limit(nPerPage)
     .toArray();
+
+  // Fetch total number of items in collection
   const countTotal = await todos.count(filter);
   res.status(200);
-  res.json({ countTotal, items: response });
+  res.json({ countTotal, items });
 });
 
 app.post("/", async (req, res) => {
@@ -71,7 +75,7 @@ app.post("/", async (req, res) => {
   res.json(todo);
 });
 
-app.put("/:id", async (req, res) => {
+app.patch("/:id/completed", async (req, res) => {
   const { id } = req.params;
   const { completed } = req.body;
 
@@ -85,11 +89,11 @@ app.put("/:id", async (req, res) => {
     .db("todos")
     .collection("todos")
     .updateOne({ id }, { $set: { completed } });
-  res.status(200);
+  res.status(204);
   res.end();
 });
 
-app.put("/:id/due-date", async (req, res) => {
+app.patch("/:id/due-date", async (req, res) => {
   const { id } = req.params;
   const { dueDate } = req.body;
 
@@ -103,7 +107,7 @@ app.put("/:id/due-date", async (req, res) => {
     .db("todos")
     .collection("todos")
     .updateOne({ id }, { $set: { dueDate: new Date(dueDate) } });
-  res.status(200);
+  res.status(204);
   res.end();
 });
 

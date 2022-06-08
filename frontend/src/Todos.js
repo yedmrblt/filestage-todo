@@ -21,28 +21,34 @@ const useStyles = makeStyles({
 });
 
 function Todos() {
-  const baseURL = "http://localhost:3001/";
+  const baseApiURL = "http://localhost:3001/";
   const classes = useStyles();
 
   const [todos, setTodos] = useState([]);
-  const [page, setPage] = useState(1);
-  const [countTotal, setCountTotal] = useState(0);
   const [showTasksDueToday, setShowTasksDueToday] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  // Next page number for infinite scroll
+  const [page, setPage] = useState(1);
+
+  // Total number of todo item in db
+  const [countTotal, setCountTotal] = useState(0);
 
   useEffect(() => {
     fetchTodos();
   }, [showTasksDueToday]);
 
+  /**
+   * Fetches todos from oldest to newest.
+   */
   function fetchTodos() {
-    setPage(page + 1);
     const queryParamsObj = { page };
 
     if (showTasksDueToday) {
       queryParamsObj.dueDate = format(new Date(), "yyyy-MM-dd");
     }
     const queryParams = new URLSearchParams(queryParamsObj).toString();
-    fetch(`${baseURL}?${queryParams}`)
+    fetch(`${baseApiURL}?${queryParams}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(response.statusText);
@@ -52,12 +58,18 @@ function Todos() {
       .then(({ countTotal, items }) => {
         setTodos([...todos, ...items]);
         setCountTotal(countTotal);
+        setPage(page + 1);
       })
       .catch(() => setHasError(true));
   }
 
+  /**
+   * Add a todo item regarding to given text and due date.
+   * @param {string} text eg: go to gym...
+   * @param {string} dueDate yyyy-MM-dd
+   */
   function addTodo(text, dueDate) {
-    fetch(baseURL, {
+    fetch(baseApiURL, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -82,15 +94,19 @@ function Todos() {
       .catch(() => setHasError(true));
   }
 
+  /**
+   * Toggle todo item's completed flag.
+   * @param {string} id the task's unique identifier
+   */
   function toggleTodoCompleted(id) {
-    fetch(`${baseURL}${id}`, {
+    fetch(`${baseApiURL}${id}/completed`, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify({
-        toggleTodoCompleted: !todos.find((todo) => todo.id === id).completed,
+        completed: !todos.find((todo) => todo.id === id).completed,
       }),
     })
       .then((response) => {
@@ -110,13 +126,18 @@ function Todos() {
       .catch(() => setHasError(true));
   }
 
+  /**
+   * Set a due date to a todo item.
+   * @param {string} id the task's unique identifier
+   * @param {string} dueDate yyyy-MM-dd
+   */
   function setTodoDueDate(id, dueDate) {
-    fetch(`${baseURL}${id}/due-date`, {
+    fetch(`${baseApiURL}${id}/due-date`, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify({
         dueDate,
       }),
@@ -138,6 +159,10 @@ function Todos() {
       .catch(() => setHasError(true));
   }
 
+  /**
+   * Delete todo item.
+   * @param {string} id the task's unique identifier
+   */
   function deleteTodo(id) {
     fetch(`http://localhost:3001/${id}`, {
       method: "DELETE",
@@ -224,6 +249,8 @@ function Todos() {
           </InfiniteScroll>
         </Box>
       </Paper>
+
+      {/* Error toast */}
       <Snackbar
         anchorOrigin={{
           vertical: "top",
@@ -234,7 +261,7 @@ function Todos() {
           setHasError(false);
         }}
         autoHideDuration={6000}
-        message="Oops!, something went wrong."
+        message="Oops! something went wrong."
       />
     </Container>
   );
