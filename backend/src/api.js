@@ -40,7 +40,7 @@ app.get("/", async (req, res) => {
   // Fetch items
   const items = await todos
     .find(filter)
-    .sort({ _id: -1 })
+    .sort({ _id: -1 }) // Fetch todos from newest to oldest
     .skip(pageNumber > 0 ? (pageNumber - 1) * nPerPage : 0)
     .limit(nPerPage)
     .toArray();
